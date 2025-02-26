@@ -65,6 +65,8 @@ func Start() {
 	router.InitUserRoute("/user", api)
 	router.InitRoleRoute("/role", api)
 	router.InitParamRoute("/param", api)
+	router.InitAttendanceRoute("/attendance", api)
+	router.InitInstitutionRoute("/institution", api)
 
 	e.Logger.Fatal(e.Start(host + ":" + strconv.Itoa(port)))
 }

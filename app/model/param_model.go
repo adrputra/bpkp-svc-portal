@@ -9,3 +9,8 @@ type Param struct {
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 	UpdatedBy   string    `json:"updated_by" gorm:"column:updated_by"`
 }
+
+type Filter struct {
+	Limit    int    `json:"limit"`
+	SortType string `json:"sort_type"`
+}

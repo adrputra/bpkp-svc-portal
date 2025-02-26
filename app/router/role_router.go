@@ -10,7 +10,9 @@ func InitRoleRoute(prefix string, e *echo.Group) {
 
 	route.GET("/mapping", service.GetAllRoleMapping)
 	route.POST("/create", service.CreateNewRole)
+	route.PUT("/mapping", service.UpdateRoleMapping)
 	route.POST("/mapping/create", service.CreateNewRoleMapping)
+	route.DELETE("/mapping/:id", service.DeleteRoleMapping)
 
 	route.GET("/menu", service.GetAllMenu)
 	route.PUT("/menu", service.UpdateMenu)

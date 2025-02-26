@@ -2,9 +2,12 @@ package client
 
 import (
 	"context"
+	"errors"
 	"face-recognition-svc/app/model"
 	"face-recognition-svc/app/utils"
+	"net/http"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +16,7 @@ type InterfaceRoleClient interface {
 	CreateNewRoleMapping(ctx context.Context, role *model.MenuRoleMapping) error
 	GetAllRoleMapping(ctx context.Context) ([]*model.MenuRoleMapping, error)
 	UpdateRoleMapping(ctx context.Context, req *model.MenuRoleMapping) error
+	DeleteRoleMapping(ctx context.Context, id string) error
 
 	GetAllMenu(ctx context.Context) ([]*model.Menu, error)
 	CreateNewMenu(ctx context.Context, request *model.Menu) error
@@ -66,6 +70,13 @@ func (r *RoleClient) CreateNewRoleMapping(ctx context.Context, req *model.MenuRo
 
 	err := r.db.Exec(query, args...).Error
 	if err != nil {
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+			switch mysqlErr.Number {
+			case 1062: // Duplicate entry
+				utils.LogEventError(span, errors.New("Role Mapping Already Exists"))
+				return model.ThrowError(http.StatusBadRequest, errors.New("Role Mapping Already Exists"))
+			}
+		}
 		utils.LogEventError(span, err)
 		return err
 	}
@@ -76,7 +87,7 @@ func (r *RoleClient) CreateNewRoleMapping(ctx context.Context, req *model.MenuRo
 }
 
 func (r *RoleClient) GetAllRoleMapping(ctx context.Context) ([]*model.MenuRoleMapping, error) {
-	span, ctx := utils.SpanFromContext(ctx, "Client: GetAllRoleMapping")
+	span, _ := utils.SpanFromContext(ctx, "Client: GetAllRoleMapping")
 	defer span.Finish()
 
 	var response []*model.MenuRoleMapping
@@ -162,8 +173,8 @@ func (r *RoleClient) CreateNewRole(ctx context.Context, req *model.Role) error {
 
 	var args []interface{}
 
-	args = append(args, req.Id, req.RoleName, req.CreatedAt, req.UpdatedAt, req.CreatedBy, req.UpdatedBy)
-	query := "INSERT INTO role (id, role_name, created_at, updated_at, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)"
+	args = append(args, req.Id, req.RoleName, req.RoleDesc, req.CreatedAt, req.UpdatedAt, req.CreatedBy, req.UpdatedBy, req.IsActive)
+	query := "INSERT INTO role (id, role_name, role_desc, created_at, updated_at, created_by, updated_by, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 
 	err := r.db.Exec(query, args...).Error
 	if err != nil {
@@ -209,10 +220,15 @@ func (r *RoleClient) UpdateRoleMapping(ctx context.Context, req *model.MenuRoleM
 	args = append(args, req.AccessMethod, req.UpdatedAt, req.UpdatedBy, req.Id)
 	query := "UPDATE menu_mapping SET access_method = ?, updated_at = ?, updated_by = ? WHERE id = ?"
 
-	err := r.db.Exec(query, args...).Error
-	if err != nil {
-		utils.LogEventError(span, err)
-		return err
+	err := r.db.Debug().Exec(query, args...)
+	if err.Error != nil {
+		utils.LogEventError(span, err.Error)
+		return err.Error
+	}
+
+	if err.RowsAffected == 0 {
+		utils.LogEventError(span, errors.New("Data Not Found"))
+		return errors.New("Data Not Found")
 	}
 
 	utils.LogEvent(span, "Response", "Success Update Role Mapping")
@@ -257,6 +273,25 @@ func (r *RoleClient) DeleteMenu(ctx context.Context, id string) error {
 	}
 
 	utils.LogEvent(span, "Response", "Success Delete Menu")
+
+	return nil
+}
+
+func (r *RoleClient) DeleteRoleMapping(ctx context.Context, id string) error {
+	span, ctx := utils.SpanFromContext(ctx, "Client: DeleteRoleMapping")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", id)
+
+	query := "DELETE FROM menu_mapping WHERE id = ?"
+
+	err := r.db.Exec(query, id).Error
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	utils.LogEvent(span, "Response", "Success Delete Role Mapping")
 
 	return nil
 }
