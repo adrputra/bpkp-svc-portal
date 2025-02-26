@@ -1,4 +1,4 @@
-name: CI/CD Face Recognition SVC
+name: CI/CD BPKP SVC PORTAL
 
 on:
   push:
