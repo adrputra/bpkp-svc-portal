@@ -6,6 +6,7 @@ import (
 	"face-recognition-svc/app/model"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/microcosm-cc/bluemonday"
@@ -74,4 +75,18 @@ func Contains(arr []string, str string) bool {
 		}
 	}
 	return false
+}
+
+var jakartaLoc *time.Location
+
+func InitTimeLocation() {
+	var err error
+	jakartaLoc, err = time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		panic("Failed to load Jakarta timezone: " + err.Error())
+	}
+}
+
+func LocalTime() time.Time {
+	return time.Now().In(jakartaLoc)
 }

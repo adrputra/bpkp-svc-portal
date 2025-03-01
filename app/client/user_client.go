@@ -42,7 +42,7 @@ func (r *UserClient) CreateNewUser(ctx context.Context, req *model.User) error {
 	utils.LogEvent(span, "Request", req)
 
 	var args []interface{}
-	args = append(args, req.Username, req.Email, req.Password, req.Fullname, req.Shortname, req.RoleID, req.InstitutionID, time.Now())
+	args = append(args, req.Username, req.Email, req.Password, req.Fullname, req.Shortname, req.RoleID, req.InstitutionID, utils.LocalTime())
 
 	query := "INSERT INTO users (username, email, password, fullname, shortname, role_id, institution_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 	result := r.db.Debug().WithContext(ctx).Exec(query, args...)
@@ -70,7 +70,7 @@ func (r *UserClient) GetUserDetail(ctx context.Context, username string) (*model
 
 	var user model.User
 
-	query := "SELECT * FROM users WHERE username = ?"
+	query := "SELECT u.*, i.name AS institution_name, r.role_name FROM users AS u LEFT JOIN institutions AS i ON u.institution_id = i.id LEFT JOIN role AS r ON u.role_id = r.id WHERE username = ?"
 	result := r.db.Debug().WithContext(ctx).Raw(query, username).Scan(&user)
 
 	if result.Error != nil {
@@ -101,7 +101,7 @@ func (r *UserClient) CreateAccessToken(ctx context.Context, user *model.User, is
 
 	utils.LogEvent(span, "Expiry", ExpireCount)
 
-	exp := time.Now().Add(time.Hour * time.Duration(ExpireCount))
+	exp := utils.LocalTime().Add(time.Hour * time.Duration(ExpireCount))
 	claims := &model.JwtCustomClaims{
 		Name: user.Username,
 		Role: user.RoleID,
@@ -129,7 +129,7 @@ func (r *UserClient) GetAllUser(ctx context.Context) ([]*model.User, error) {
 
 	var response []*model.User
 
-	query := "SELECT * FROM users"
+	query := "SELECT u.*, i.name AS institution_name, r.role_name FROM users AS u LEFT JOIN institutions AS i ON u.institution_id = i.id LEFT JOIN role AS r ON u.role_id = r.id"
 	result := r.db.Debug().WithContext(ctx).Raw(query).Scan(&response)
 
 	if result.Error != nil {

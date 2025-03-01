@@ -9,4 +9,5 @@ func InitAttendanceRoute(prefix string, e *echo.Group) {
 	route.GET("", service.GetTodayAttendances)
 	route.POST("", service.GetUserAttendances)
 	route.POST("/checkin", service.CheckIn)
+	route.POST("/checkout", service.CheckOut)
 }

@@ -101,7 +101,7 @@ func (c *ParamController) InsertNewParam(ctx context.Context, param *model.Param
 		return err
 	}
 
-	param.UpdatedAt = time.Now()
+	param.UpdatedAt = utils.LocalTime()
 	param.UpdatedBy = session.Username
 
 	utils.LogEvent(span, "Request", param)
@@ -127,7 +127,7 @@ func (c *ParamController) UpdateParam(ctx context.Context, param *model.Param) e
 		return err
 	}
 
-	param.UpdatedAt = time.Now()
+	param.UpdatedAt = utils.LocalTime()
 	param.UpdatedBy = session.Username
 
 	utils.LogEvent(span, "Request", param)

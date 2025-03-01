@@ -5,7 +5,6 @@ import (
 	"face-recognition-svc/app/client"
 	"face-recognition-svc/app/model"
 	"face-recognition-svc/app/utils"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -47,8 +46,8 @@ func (c *RoleController) CreateNewRoleMapping(ctx context.Context, request *mode
 		return err
 	}
 
-	request.CreatedAt = time.Now()
-	request.UpdatedAt = time.Now()
+	request.CreatedAt = utils.LocalTime()
+	request.UpdatedAt = utils.LocalTime()
 	request.CreatedBy = session.Username
 	request.UpdatedBy = session.Username
 
@@ -87,7 +86,7 @@ func (c *RoleController) UpdateRoleMapping(ctx context.Context, request *model.M
 		return err
 	}
 
-	request.UpdatedAt = time.Now()
+	request.UpdatedAt = utils.LocalTime()
 	request.UpdatedBy = session.Username
 
 	err = c.roleClient.UpdateRoleMapping(ctx, request)
@@ -126,8 +125,8 @@ func (c *RoleController) CreateNewMenu(ctx context.Context, request *model.Menu)
 	}
 
 	request.Id = uuid.New().String()
-	request.CreatedAt = time.Now()
-	request.UpdatedAt = time.Now()
+	request.CreatedAt = utils.LocalTime()
+	request.UpdatedAt = utils.LocalTime()
 	request.CreatedBy = session.Username
 	request.UpdatedBy = session.Username
 
@@ -167,8 +166,8 @@ func (c *RoleController) CreateNewRole(ctx context.Context, request *model.Role)
 	}
 
 	request.Id = uuid.New().String()
-	request.CreatedAt = time.Now()
-	request.UpdatedAt = time.Now()
+	request.CreatedAt = utils.LocalTime()
+	request.UpdatedAt = utils.LocalTime()
 	request.CreatedBy = session.Username
 	request.UpdatedBy = session.Username
 	request.IsActive = true
@@ -193,7 +192,7 @@ func (c *RoleController) UpdateMenu(ctx context.Context, request *model.Menu) er
 		return err
 	}
 
-	request.UpdatedAt = time.Now()
+	request.UpdatedAt = utils.LocalTime()
 	request.UpdatedBy = session.Username
 
 	utils.LogEvent(span, "Request", request)

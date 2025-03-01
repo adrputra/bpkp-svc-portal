@@ -108,14 +108,18 @@ func (c *UserController) Login(ctx context.Context, request *model.RequestLogin)
 	}
 
 	response := &model.ResponseLogin{
-		Username:      user.Username,
-		Fullname:      user.Fullname,
-		Shortname:     user.Shortname,
-		Role:          user.RoleID,
-		Token:         accessToken,
-		InstitutionID: user.InstitutionID,
-		MenuMapping:   role,
+		Username:        user.Username,
+		Fullname:        user.Fullname,
+		Shortname:       user.Shortname,
+		Role:            user.RoleID,
+		RoleName:        user.RoleName,
+		Token:           accessToken,
+		InstitutionID:   user.InstitutionID,
+		InstitutionName: user.InstitutionName,
+		MenuMapping:     role,
 	}
+
+	utils.LogEvent(span, "Response", response)
 
 	return response, nil
 }

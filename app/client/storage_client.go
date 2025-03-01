@@ -125,7 +125,7 @@ func (c *StorageClient) StoreFileData(ctx context.Context, tx *gorm.DB, req *mod
 	defer span.Finish()
 
 	var args []interface{}
-	args = append(args, req.Username, req.Bucket, time.Now())
+	args = append(args, req.Username, req.Bucket, utils.LocalTime())
 
 	var result *gorm.DB
 	query := "INSERT INTO face_datasets (username, dataset, created_at) VALUES (?, ?, ?)"

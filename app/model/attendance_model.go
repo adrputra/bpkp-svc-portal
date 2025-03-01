@@ -3,8 +3,10 @@ package model
 import "time"
 
 type RequestUserAttendances struct {
-	Username string `json:"username" validate:"required"`
-	Filter   Filter `json:"filter"`
+	Username      string `json:"username" validate:"required"`
+	InstitutionID string `json:"institution_id"`
+	RoleLevel     int    `json:"role_level"`
+	Filter        Filter `json:"filter"`
 }
 
 type Attendance struct {
@@ -16,6 +18,8 @@ type Attendance struct {
 	StatusOut string    `json:"status_out" gorm:"column:status_out"`
 	RemarkIn  string    `json:"remark_in" gorm:"column:remark_in"`
 	RemarkOut string    `json:"remark_out" gorm:"column:remark_out"`
+	SourceIn  string    `json:"source_in" gorm:"column:source_in"`
+	SourceOut string    `json:"source_out" gorm:"column:source_out"`
 }
 
 type UserAttendance struct {

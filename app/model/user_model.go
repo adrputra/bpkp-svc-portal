@@ -17,14 +17,16 @@ type MetadataUser struct {
 }
 
 type User struct {
-	Username      string `json:"username" gorm:"column:username" validate:"required"`
-	Email         string `json:"email" gorm:"column:email" validate:"required"`
-	Password      string `json:"password" gorm:"column:password" validate:"required"`
-	Fullname      string `json:"fullname" gorm:"column:fullname" validate:"required"`
-	Shortname     string `json:"shortname" gorm:"column:shortname" validate:"required"`
-	RoleID        string `json:"role_id" gorm:"column:role_id" validate:"required"`
-	InstitutionID string `json:"institution_id" gorm:"column:institution_id" validate:"required"`
-	CreatedAt     string `json:"created_at" gorm:"column:created_at"`
+	Username        string `json:"username" gorm:"column:username" validate:"required"`
+	Email           string `json:"email" gorm:"column:email" validate:"required"`
+	Password        string `json:"password" gorm:"column:password" validate:"required"`
+	Fullname        string `json:"fullname" gorm:"column:fullname" validate:"required"`
+	Shortname       string `json:"shortname" gorm:"column:shortname" validate:"required"`
+	RoleID          string `json:"role_id" gorm:"column:role_id" validate:"required"`
+	RoleName        string `json:"role_name" gorm:"column:role_name"`
+	InstitutionID   string `json:"institution_id" gorm:"column:institution_id" validate:"required"`
+	InstitutionName string `json:"institution_name" gorm:"column:institution_name"`
+	CreatedAt       string `json:"created_at" gorm:"column:created_at"`
 }
 
 type RequestLogin struct {
@@ -33,11 +35,13 @@ type RequestLogin struct {
 }
 
 type ResponseLogin struct {
-	Username      string             `json:"username" gorm:"type:varchar(200);"`
-	Fullname      string             `json:"fullname" gorm:"type:varchar(200);"`
-	Shortname     string             `json:"shortname" gorm:"type:varchar(200);"`
-	Role          string             `json:"role" gorm:"type:varchar(200);"`
-	Token         string             `json:"token" gorm:"type:varchar(200);"`
-	InstitutionID string             `json:"institution_id" gorm:"type:varchar(200);"`
-	MenuMapping   []*MenuRoleMapping `json:"menu_mapping" gorm:"-"`
+	Username        string             `json:"username" gorm:"type:varchar(200);"`
+	Fullname        string             `json:"fullname" gorm:"type:varchar(200);"`
+	Shortname       string             `json:"shortname" gorm:"type:varchar(200);"`
+	Role            string             `json:"role" gorm:"type:varchar(200);"`
+	RoleName        string             `json:"role_name" gorm:"type:varchar(200);"`
+	Token           string             `json:"token" gorm:"type:varchar(200);"`
+	InstitutionID   string             `json:"institution_id" gorm:"type:varchar(200);"`
+	InstitutionName string             `json:"institution_name" gorm:"type:varchar(200);"`
+	MenuMapping     []*MenuRoleMapping `json:"menu_mapping" gorm:"-"`
 }

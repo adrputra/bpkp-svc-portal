@@ -13,6 +13,7 @@ type InterfaceAttendanceService interface {
 	GetUserAttendances(e echo.Context) error
 	GetTodayAttendances(e echo.Context) error
 	CheckIn(e echo.Context) error
+	CheckOut(e echo.Context) error
 }
 
 type AttendanceService struct {
@@ -71,6 +72,32 @@ func (s *AttendanceService) CheckIn(e echo.Context) error {
 	return e.JSON(http.StatusOK, model.Response{
 		Code:    200,
 		Message: "Success Check In",
+		Data:    nil,
+	})
+}
+
+func (s *AttendanceService) CheckOut(e echo.Context) error {
+	ctx, span := utils.StartSpan(e, "CheckOut")
+	defer span.Finish()
+
+	var request *model.Attendance
+
+	if err := e.Bind(&request); err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	utils.LogEvent(span, "Request", request)
+
+	err := s.uc.CheckOut(ctx, request)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	return e.JSON(http.StatusOK, model.Response{
+		Code:    200,
+		Message: "Success Check Out",
 		Data:    nil,
 	})
 }

@@ -11,9 +11,10 @@ import (
 )
 
 type InterfaceAttendanceClient interface {
-	GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.Attendance, error)
+	GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.UserAttendance, error)
 	GetTodayAttendances(ctx context.Context, username string) (*model.UserAttendance, error)
 	CheckIn(ctx context.Context, request *model.Attendance) error
+	CheckOut(ctx context.Context, request *model.Attendance) error
 }
 
 type AttendanceClient struct {
@@ -24,13 +25,22 @@ func NewAttendanceClient(db *gorm.DB) *AttendanceClient {
 	return &AttendanceClient{db: db}
 }
 
-func (c *AttendanceClient) GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.Attendance, error) {
+func (c *AttendanceClient) GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.UserAttendance, error) {
 	span, _ := utils.SpanFromContext(ctx, "Client: GetUserAttendances")
 	defer span.Finish()
 
-	var response []*model.Attendance
+	var response []*model.UserAttendance
 
 	sb := strings.Builder{}
+
+	if request.RoleLevel == 3 {
+		sb.WriteString(fmt.Sprintf(" AND u.username = %s", request.Username))
+	}
+
+	if request.RoleLevel == 2 {
+		sb.WriteString(fmt.Sprintf(" AND u.institution_id = %s", request.InstitutionID))
+	}
+
 	if request.Filter.Limit > 0 {
 		sb.WriteString(fmt.Sprintf(" LIMIT %d", request.Filter.Limit))
 	}
@@ -39,11 +49,11 @@ func (c *AttendanceClient) GetUserAttendances(ctx context.Context, request *mode
 		sb.WriteString(fmt.Sprintf(" %s", request.Filter.SortType))
 	}
 
-	query := "SELECT * FROM attendance WHERE username = ?"
+	query := "SELECT a.*, u.fullname, u.shortname, u.email, u.gender  FROM attendance AS a INNER JOIN users AS u ON a.username = u.username"
 
 	utils.LogEvent(span, "Query", query+sb.String())
 
-	err := c.db.Debug().Raw(query, request.Username, sb.String()).Scan(&response).Error
+	err := c.db.Debug().Raw(query + sb.String()).Scan(&response).Error
 
 	if err != nil {
 		utils.LogEventError(span, err)
@@ -82,8 +92,29 @@ func (c *AttendanceClient) CheckIn(ctx context.Context, request *model.Attendanc
 
 	var args []interface{}
 
-	args = append(args, request.Username, request.CheckIn, nil, request.StatusIn, request.StatusOut, request.RemarkIn, request.RemarkOut)
-	query := "INSERT INTO attendance (username, check_in, check_out, status_in, status_out, remark_in, remark_out) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	args = append(args, request.Username, request.CheckIn, request.StatusIn, request.RemarkIn, request.SourceIn, request.Username)
+	query := "INSERT INTO attendance (username, check_in, status_in, remark_in, source_in) SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM attendance WHERE username = ? AND DATE(check_in) = CURDATE())"
+
+	err := c.db.Debug().Exec(query, args...).Error
+
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *AttendanceClient) CheckOut(ctx context.Context, request *model.Attendance) error {
+	span, _ := utils.SpanFromContext(ctx, "Client: CheckOut")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", request)
+
+	var args []interface{}
+
+	args = append(args, request.CheckOut, request.StatusOut, request.RemarkOut, request.SourceOut, request.Username)
+	query := "UPDATE attendance SET check_out = ?, status_out = ?, remark_out = ?, source_out = ? WHERE username = ? AND DATE(check_in) = CURDATE()"
 
 	err := c.db.Debug().Exec(query, args...).Error
 

@@ -5,7 +5,6 @@ import (
 	"face-recognition-svc/app/client"
 	"face-recognition-svc/app/model"
 	"face-recognition-svc/app/utils"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -64,7 +63,7 @@ func (c *InstitutionController) InsertNewInstitution(ctx context.Context, instit
 		return err
 	}
 	institution.ID = uuid.New().String()
-	institution.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
+	institution.CreatedAt = utils.LocalTime().Format("2006-01-02 15:04:05")
 	institution.CreatedBy = session.Username
 	utils.LogEvent(span, "Request", institution)
 

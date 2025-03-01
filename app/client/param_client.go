@@ -88,7 +88,7 @@ func (c *ParamClient) UpdateParam(ctx context.Context, param *model.Param) error
 
 	var args []interface{}
 
-	args = append(args, param.Value, param.UpdatedAt, param.UpdatedBy, param.Key)
+	args = append(args, param.Value, param.Description, param.UpdatedAt, param.UpdatedBy, param.Key)
 	query := "UPDATE parameter SET value = ?, description = ?, updated_at = ?, updated_by = ? WHERE id = ?"
 	result := c.db.Debug().WithContext(ctx).Exec(query, args...)
 

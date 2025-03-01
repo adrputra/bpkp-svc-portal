@@ -9,9 +9,10 @@ import (
 )
 
 type InterfaceAttendanceController interface {
-	GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.Attendance, error)
+	GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.UserAttendance, error)
 	GetTodayAttendances(ctx context.Context) (*model.UserAttendance, error)
 	CheckIn(ctx context.Context, request *model.Attendance) error
+	CheckOut(ctx context.Context, request *model.Attendance) error
 }
 
 type AttendanceController struct {
@@ -26,7 +27,7 @@ func NewAttendanceController(attendanceClient client.InterfaceAttendanceClient, 
 	}
 }
 
-func (uc *AttendanceController) GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.Attendance, error) {
+func (uc *AttendanceController) GetUserAttendances(ctx context.Context, request *model.RequestUserAttendances) ([]*model.UserAttendance, error) {
 	span, ctx := utils.SpanFromContext(ctx, "Controller: GetUserAttendances")
 	defer span.Finish()
 
@@ -68,14 +69,7 @@ func (uc *AttendanceController) CheckIn(ctx context.Context, request *model.Atte
 	span, ctx := utils.SpanFromContext(ctx, "Controller: CheckIn")
 	defer span.Finish()
 
-	session, err := utils.GetMetadata(ctx)
-	if err != nil {
-		utils.LogEventError(span, err)
-		return err
-	}
-
-	request.Username = session.Username
-	request.CheckIn = time.Now()
+	request.CheckIn = utils.LocalTime()
 
 	checkInThreshold, err := uc.paramClient.GetParameterByKey(ctx, "checkin-time")
 	if err != nil {
@@ -89,8 +83,8 @@ func (uc *AttendanceController) CheckIn(ctx context.Context, request *model.Atte
 		return err
 	}
 
-	targetTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), parsedTime.Hour(), parsedTime.Minute(), 0, 0, time.Local)
-	if time.Now().Compare(targetTime) == -1 {
+	targetTime := time.Date(utils.LocalTime().Year(), utils.LocalTime().Month(), utils.LocalTime().Day(), parsedTime.Hour(), parsedTime.Minute(), 0, 0, time.Local)
+	if utils.LocalTime().Compare(targetTime) == -1 {
 		request.StatusIn = "On Time"
 	} else {
 		request.StatusIn = "Late"
@@ -105,6 +99,45 @@ func (uc *AttendanceController) CheckIn(ctx context.Context, request *model.Atte
 	}
 
 	utils.LogEvent(span, "Response", "Success Check In")
+
+	return nil
+}
+
+func (uc *AttendanceController) CheckOut(ctx context.Context, request *model.Attendance) error {
+	span, ctx := utils.SpanFromContext(ctx, "Controller: CheckIn")
+	defer span.Finish()
+
+	request.CheckOut = utils.LocalTime()
+
+	utils.LogEvent(span, "Request", request)
+	checkInThreshold, err := uc.paramClient.GetParameterByKey(ctx, "checkout-time")
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	parsedTime, err := time.Parse("15:04", checkInThreshold.Value)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	targetTime := time.Date(utils.LocalTime().Year(), utils.LocalTime().Month(), utils.LocalTime().Day(), parsedTime.Hour(), parsedTime.Minute(), 0, 0, time.Local)
+	if utils.LocalTime().Compare(targetTime) == -1 {
+		request.StatusOut = "Early"
+	} else {
+		request.StatusOut = "Normal"
+	}
+
+	utils.LogEvent(span, "Request", request)
+
+	err = uc.attendanceClient.CheckOut(ctx, request)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	utils.LogEvent(span, "Response", "Success Check Out")
 
 	return nil
 }

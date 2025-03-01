@@ -20,6 +20,8 @@ func Start() {
 	config.InitConfig()
 	cfg := config.GetConfig()
 
+	utils.InitTimeLocation()
+
 	tracer, closer, err := utils.InitJaeger(cfg)
 	if err != nil {
 		logrus.Fatalf("Failed to initialize Jaeger tracer: %v", err)
