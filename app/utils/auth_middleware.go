@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"face-recognition-svc/app/model"
+	"bpkp-svc-portal/app/model"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"

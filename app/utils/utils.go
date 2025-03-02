@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"bpkp-svc-portal/app/model"
 	"context"
 	"errors"
-	"face-recognition-svc/app/model"
 	"net/http"
 	"strings"
 	"time"

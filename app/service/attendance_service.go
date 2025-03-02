@@ -1,9 +1,9 @@
 package service
 
 import (
-	"face-recognition-svc/app/controller"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
+	"bpkp-svc-portal/app/controller"
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -34,6 +34,8 @@ func (s *AttendanceService) GetUserAttendances(e echo.Context) error {
 		utils.LogEventError(span, err)
 		return utils.LogError(e, err, nil)
 	}
+
+	request.RoleID = e.Request().Header.Get("app-role-id")
 
 	utils.LogEvent(span, "Request", request)
 

@@ -1,11 +1,11 @@
 package app
 
 import (
-	"face-recognition-svc/app/config"
-	"face-recognition-svc/app/connection"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/router"
-	"face-recognition-svc/app/utils"
+	"bpkp-svc-portal/app/config"
+	"bpkp-svc-portal/app/connection"
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/router"
+	"bpkp-svc-portal/app/utils"
 	"strconv"
 
 	"github.com/golang-jwt/jwt/v5"

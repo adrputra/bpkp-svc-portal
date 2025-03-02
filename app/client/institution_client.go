@@ -1,10 +1,10 @@
 package client
 
 import (
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"context"
 	"errors"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
 	"net/http"
 
 	"gorm.io/gorm"

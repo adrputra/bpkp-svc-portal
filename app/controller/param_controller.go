@@ -1,11 +1,11 @@
 package controller
 
 import (
+	"bpkp-svc-portal/app/client"
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"context"
 	"encoding/json"
-	"face-recognition-svc/app/client"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
 	"fmt"
 	"time"
 
@@ -38,35 +38,10 @@ func (c *ParamController) GetParameterByKey(ctx context.Context, key string) (*m
 
 	utils.LogEvent(span, "Request", key)
 
-	cache := c.redis.Get(ctx, key).Val() // Get string value from Redis
-	if cache != "" {
-		utils.LogEvent(span, "Redis", cache)
-
-		// Deserialize the cached value into the expected object
-		resCache := &model.Param{}
-		if err := json.Unmarshal([]byte(cache), resCache); err != nil {
-			utils.LogEventError(span, err)
-		} else {
-			return resCache, nil // Return the cached value
-		}
-	}
-
 	res, err := c.client.GetParameterByKey(ctx, key)
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err
-	}
-
-	// Serialize the response into JSON
-	resJSON, err := json.Marshal(res)
-	if err != nil {
-		utils.LogEventError(span, err)
-		return res, nil // Return the result even if caching fails
-	}
-
-	// Set the serialized object in Redis with an expiration (e.g., 5 minutes)
-	if err := c.redis.Set(ctx, key, resJSON, 6*time.Hour).Err(); err != nil {
-		utils.LogEventError(span, err)
 	}
 
 	utils.LogEvent(span, "Response", res)

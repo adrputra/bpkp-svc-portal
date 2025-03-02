@@ -26,7 +26,7 @@ jaeger:
   host: "217.15.163.138"
   port: "6831"
   tracePerSecond: 100
-  serviceName: "face-recognition-svc"
+  serviceName: "bpkp-svc-portal"
 minioProfile:
   host: "217.15.163.138"
   port: "9000"

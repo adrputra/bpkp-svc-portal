@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"bpkp-svc-portal/app/client"
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"context"
-	"face-recognition-svc/app/client"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
+	"strings"
 	"time"
 )
 
@@ -32,6 +33,26 @@ func (uc *AttendanceController) GetUserAttendances(ctx context.Context, request 
 	defer span.Finish()
 
 	utils.LogEvent(span, "Request", request)
+
+	roleLevel, err := uc.paramClient.GetParameterByKey(ctx, "role-level-1")
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+	if utils.Contains(strings.Split(roleLevel.Value, ";"), request.RoleID) {
+		request.RoleLevel = 1
+	} else {
+		roleLevel, err = uc.paramClient.GetParameterByKey(ctx, "role-level-2")
+		if err != nil {
+			utils.LogEventError(span, err)
+			return nil, err
+		}
+		if utils.Contains(strings.Split(roleLevel.Value, ";"), request.RoleID) {
+			request.RoleLevel = 2
+		} else {
+			request.RoleLevel = 3
+		}
+	}
 
 	res, err := uc.attendanceClient.GetUserAttendances(ctx, request)
 

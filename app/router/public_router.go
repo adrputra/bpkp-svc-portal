@@ -1,7 +1,7 @@
 package router
 
 import (
-	"face-recognition-svc/app/model"
+	"bpkp-svc-portal/app/model"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

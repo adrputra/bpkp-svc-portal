@@ -1,10 +1,10 @@
 package router
 
 import (
-	"face-recognition-svc/app/client"
-	"face-recognition-svc/app/config"
-	"face-recognition-svc/app/controller"
-	"face-recognition-svc/app/service"
+	"bpkp-svc-portal/app/client"
+	"bpkp-svc-portal/app/config"
+	"bpkp-svc-portal/app/controller"
+	"bpkp-svc-portal/app/service"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -51,7 +51,7 @@ func InitFactory(cfg *config.Config, db *gorm.DB, s3 *s3.S3, redis *redis.Client
 		user:        client.NewUserClient(db, cfg),
 		storage:     client.NewStorageClient(s3, db),
 		role:        client.NewRoleClient(db),
-		param:       client.NewParamClient(db),
+		param:       client.NewParamClient(db, redis),
 		attendance:  client.NewAttendanceClient(db),
 		institution: client.NewInstitutionClient(db),
 	}

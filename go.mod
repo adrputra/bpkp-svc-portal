@@ -1,4 +1,4 @@
-module face-recognition-svc
+module bpkp-svc-portal
 
 go 1.21.4
 
@@ -11,6 +11,8 @@ require (
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/opentracing/opentracing-go v1.2.0
+	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.19.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
@@ -22,8 +24,6 @@ require (
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.2 // indirect
-	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -43,8 +43,6 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
-	github.com/redis/go-redis/v9 v9.7.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

@@ -1,9 +1,9 @@
 package service
 
 import (
-	"face-recognition-svc/app/controller"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
+	"bpkp-svc-portal/app/controller"
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

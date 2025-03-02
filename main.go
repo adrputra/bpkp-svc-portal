@@ -1,7 +1,7 @@
 package main
 
 import (
-	"face-recognition-svc/app"
+	"bpkp-svc-portal/app"
 	"os"
 )
 

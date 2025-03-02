@@ -1,10 +1,10 @@
 package controller
 
 import (
+	"bpkp-svc-portal/app/client"
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"context"
-	"face-recognition-svc/app/client"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
 
 	"github.com/google/uuid"
 )

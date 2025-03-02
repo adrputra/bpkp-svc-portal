@@ -1,9 +1,9 @@
 package connection
 
 import (
+	"bpkp-svc-portal/app/config"
 	"context"
 	"crypto/tls"
-	"face-recognition-svc/app/config"
 	"fmt"
 	"log"
 	"net/http"

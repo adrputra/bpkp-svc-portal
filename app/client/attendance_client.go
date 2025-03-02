@@ -1,9 +1,9 @@
 package client
 
 import (
+	"bpkp-svc-portal/app/model"
+	"bpkp-svc-portal/app/utils"
 	"context"
-	"face-recognition-svc/app/model"
-	"face-recognition-svc/app/utils"
 	"fmt"
 	"strings"
 
