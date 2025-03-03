@@ -12,6 +12,8 @@ import (
 type InterfaceUserService interface {
 	CreateNewUser(e echo.Context) error
 	GetUserDetail(e echo.Context) error
+	UpdateUser(e echo.Context) error
+	DeleteUser(e echo.Context) error
 	Login(e echo.Context) error
 	GetAllUser(e echo.Context) error
 	GetInstitutionList(e echo.Context) error
@@ -73,6 +75,53 @@ func (s *UserService) GetUserDetail(e echo.Context) error {
 		Code:    200,
 		Message: "Success Get User Detail",
 		Data:    user,
+	})
+}
+
+func (s *UserService) UpdateUser(e echo.Context) error {
+	ctx, span := utils.StartSpan(e, "UpdateUser")
+	defer span.Finish()
+
+	var request *model.User
+
+	if err := e.Bind(&request); err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	utils.LogEvent(span, "Request", request)
+
+	err := s.uc.UpdateUser(ctx, request)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	return e.JSON(http.StatusOK, model.Response{
+		Code:    200,
+		Message: "Success Update User",
+		Data:    nil,
+	})
+}
+
+func (s *UserService) DeleteUser(e echo.Context) error {
+	ctx, span := utils.StartSpan(e, "DeleteUser")
+	defer span.Finish()
+
+	username := e.Param("id")
+
+	utils.LogEvent(span, "Request", username)
+
+	err := s.uc.DeleteUser(ctx, username)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	return e.JSON(http.StatusOK, model.Response{
+		Code:    200,
+		Message: "Success Delete User",
+		Data:    nil,
 	})
 }
 

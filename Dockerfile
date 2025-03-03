@@ -3,6 +3,7 @@ FROM golang:1.21-alpine AS builder
 
 # Install git (required for go mod)
 RUN apk add --no-cache git
+RUN apk add --no-cache tzdata
 
 # Set the working directory inside the container
 WORKDIR /app

@@ -26,6 +26,10 @@ type User struct {
 	RoleName        string `json:"role_name" gorm:"column:role_name"`
 	InstitutionID   string `json:"institution_id" gorm:"column:institution_id" validate:"required"`
 	InstitutionName string `json:"institution_name" gorm:"column:institution_name"`
+	PhoneNumber     string `json:"phone_number" gorm:"column:phone_number"`
+	Address         string `json:"address" gorm:"column:address"`
+	Gender          string `json:"gender" gorm:"column:gender"`
+	Religion        string `json:"religion" gorm:"column:religion"`
 	CreatedAt       string `json:"created_at" gorm:"column:created_at"`
 }
 

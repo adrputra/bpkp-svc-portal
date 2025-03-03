@@ -4,6 +4,7 @@ import (
 	"bpkp-svc-portal/app/model"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -83,7 +84,8 @@ func InitTimeLocation() {
 	var err error
 	jakartaLoc, err = time.LoadLocation("Asia/Jakarta")
 	if err != nil {
-		panic("Failed to load Jakarta timezone: " + err.Error())
+		fmt.Println("Warning: Failed to load Jakarta timezone, using fixed UTC+7 instead")
+		jakartaLoc = time.FixedZone("WIB", 7*60*60) // UTC+7 for Jakarta
 	}
 }
 

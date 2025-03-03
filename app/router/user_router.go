@@ -8,6 +8,7 @@ func InitUserRoute(prefix string, e *echo.Group) {
 
 	route.GET("", service.GetAllUser)
 	route.GET("/detail/:id", service.GetUserDetail)
-
+	route.PUT("", service.UpdateUser)
+	route.DELETE("/:id", service.DeleteUser)
 	route.GET("/institutions", service.GetInstitutionList)
 }

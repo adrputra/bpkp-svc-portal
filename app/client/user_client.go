@@ -18,6 +18,8 @@ import (
 type InterfaceUserClient interface {
 	CreateNewUser(ctx context.Context, user *model.User) error
 	GetUserDetail(ctx context.Context, username string) (*model.User, error)
+	UpdateUser(ctx context.Context, user *model.User) error
+	DeleteUser(ctx context.Context, username string) error
 	CreateAccessToken(ctx context.Context, user *model.User, isLogout bool, menuMapping map[string]string) (t string, expired int64, err error)
 	GetAllUser(ctx context.Context) ([]*model.User, error)
 	GetInstitutionList(ctx context.Context) ([]string, error)
@@ -42,9 +44,9 @@ func (r *UserClient) CreateNewUser(ctx context.Context, req *model.User) error {
 	utils.LogEvent(span, "Request", req)
 
 	var args []interface{}
-	args = append(args, req.Username, req.Email, req.Password, req.Fullname, req.Shortname, req.RoleID, req.InstitutionID, utils.LocalTime())
+	args = append(args, req.Username, req.Email, req.Password, req.Fullname, req.Shortname, req.RoleID, req.InstitutionID, utils.LocalTime(), req.Address, req.PhoneNumber, req.Gender, req.Religion)
 
-	query := "INSERT INTO users (username, email, password, fullname, shortname, role_id, institution_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO users (username, email, password, fullname, shortname, role_id, institution_id, created_at, address, phone_number, gender, religion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	result := r.db.Debug().WithContext(ctx).Exec(query, args...)
 
 	if result.Error != nil {
@@ -88,6 +90,53 @@ func (r *UserClient) GetUserDetail(ctx context.Context, username string) (*model
 	return &user, nil
 }
 
+func (r *UserClient) UpdateUser(ctx context.Context, user *model.User) error {
+	span, ctx := utils.SpanFromContext(ctx, "Client: UpdateUser")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", user)
+
+	var args []interface{}
+	args = append(args, user.Fullname, user.Shortname, user.Email, user.RoleID, user.InstitutionID, user.Address, user.PhoneNumber, user.Gender, user.Religion, user.Username)
+
+	query := "UPDATE users SET fullname = ?, shortname = ?, email = ?, role_id = ?, institution_id = ?, address = ?, phone_number = ?, gender = ?, religion = ? WHERE username = ?"
+	result := r.db.Debug().WithContext(ctx).Exec(query, args...)
+
+	if result.Error != nil {
+		utils.LogEventError(span, result.Error)
+		return model.ThrowError(http.StatusInternalServerError, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		utils.LogEventError(span, errors.New("user not found"))
+		return model.ThrowError(http.StatusBadRequest, errors.New("user not found"))
+	}
+
+	return nil
+}
+
+func (r *UserClient) DeleteUser(ctx context.Context, username string) error {
+	span, ctx := utils.SpanFromContext(ctx, "Client: DeleteUser")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", username)
+
+	query := "DELETE FROM users WHERE username = ?"
+	result := r.db.Debug().WithContext(ctx).Exec(query, username)
+
+	if result.Error != nil {
+		utils.LogEventError(span, result.Error)
+		return model.ThrowError(http.StatusInternalServerError, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		utils.LogEventError(span, errors.New("user not found"))
+		return model.ThrowError(http.StatusBadRequest, errors.New("user not found"))
+	}
+
+	return nil
+}
+
 func (r *UserClient) CreateAccessToken(ctx context.Context, user *model.User, isLogout bool, menuMapping map[string]string) (t string, expired int64, err error) {
 	span, _ := utils.SpanFromContext(ctx, "Client: CreateAccessToken")
 	defer span.Finish()
@@ -129,7 +178,7 @@ func (r *UserClient) GetAllUser(ctx context.Context) ([]*model.User, error) {
 
 	var response []*model.User
 
-	query := "SELECT u.*, i.name AS institution_name, r.role_name FROM users AS u LEFT JOIN institutions AS i ON u.institution_id = i.id LEFT JOIN role AS r ON u.role_id = r.id"
+	query := "SELECT u.username, u.fullname, u.shortname, u.email, u.institution_id, u.role_id, u.address, u.phone_number, u.gender, u.religion, u.created_at, i.name AS institution_name, r.role_name FROM users AS u LEFT JOIN institutions AS i ON u.institution_id = i.id LEFT JOIN role AS r ON u.role_id = r.id"
 	result := r.db.Debug().WithContext(ctx).Raw(query).Scan(&response)
 
 	if result.Error != nil {

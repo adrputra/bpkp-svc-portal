@@ -14,6 +14,8 @@ import (
 type InterfaceUserController interface {
 	CreateNewUser(ctx context.Context, request *model.User) error
 	GetUserDetail(ctx context.Context, username string) (*model.User, error)
+	UpdateUser(ctx context.Context, request *model.User) error
+	DeleteUser(ctx context.Context, username string) error
 	Login(ctx context.Context, request *model.RequestLogin) (*model.ResponseLogin, error)
 	GetAllUser(ctx context.Context) ([]*model.User, error)
 	GetInstitutionList(ctx context.Context) ([]string, error)
@@ -66,6 +68,36 @@ func (c *UserController) GetUserDetail(ctx context.Context, username string) (*m
 	}
 
 	return user, nil
+}
+
+func (c *UserController) UpdateUser(ctx context.Context, request *model.User) error {
+	span, ctx := utils.SpanFromContext(ctx, "Controller: UpdateUser")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", request)
+
+	err := c.userClient.UpdateUser(ctx, request)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *UserController) DeleteUser(ctx context.Context, username string) error {
+	span, ctx := utils.SpanFromContext(ctx, "Controller: DeleteUser")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", username)
+
+	err := c.userClient.DeleteUser(ctx, username)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *UserController) Login(ctx context.Context, request *model.RequestLogin) (*model.ResponseLogin, error) {
