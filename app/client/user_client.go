@@ -6,8 +6,10 @@ import (
 	"bpkp-svc-portal/app/utils"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -21,7 +23,7 @@ type InterfaceUserClient interface {
 	UpdateUser(ctx context.Context, user *model.User) error
 	DeleteUser(ctx context.Context, username string) error
 	CreateAccessToken(ctx context.Context, user *model.User, isLogout bool, menuMapping map[string]string) (t string, expired int64, err error)
-	GetAllUser(ctx context.Context) ([]*model.User, error)
+	GetAllUser(ctx context.Context, roleLevel int, institutionID string) ([]*model.User, error)
 	GetInstitutionList(ctx context.Context) ([]string, error)
 }
 
@@ -75,14 +77,14 @@ func (r *UserClient) GetUserDetail(ctx context.Context, username string) (*model
 	query := "SELECT u.*, i.name AS institution_name, r.role_name FROM users AS u LEFT JOIN institutions AS i ON u.institution_id = i.id LEFT JOIN role AS r ON u.role_id = r.id WHERE username = ?"
 	result := r.db.Debug().WithContext(ctx).Raw(query, username).Scan(&user)
 
-	if result.Error != nil {
-		utils.LogEventError(span, result.Error)
-		return nil, model.ThrowError(http.StatusInternalServerError, result.Error)
-	}
-
 	if result.RowsAffected == 0 {
 		utils.LogEventError(span, errors.New("user not found"))
 		return nil, model.ThrowError(http.StatusBadRequest, errors.New("user not found"))
+	}
+
+	if result.Error != nil {
+		utils.LogEventError(span, result.Error)
+		return nil, model.ThrowError(http.StatusInternalServerError, result.Error)
 	}
 
 	utils.LogEvent(span, "Response", user)
@@ -107,10 +109,10 @@ func (r *UserClient) UpdateUser(ctx context.Context, user *model.User) error {
 		return model.ThrowError(http.StatusInternalServerError, result.Error)
 	}
 
-	if result.RowsAffected == 0 {
-		utils.LogEventError(span, errors.New("user not found"))
-		return model.ThrowError(http.StatusBadRequest, errors.New("user not found"))
-	}
+	// if result.RowsAffected == 0 {
+	// 	utils.LogEventError(span, errors.New("user not found"))
+	// 	return model.ThrowError(http.StatusBadRequest, errors.New("user not found"))
+	// }
 
 	return nil
 }
@@ -157,7 +159,8 @@ func (r *UserClient) CreateAccessToken(ctx context.Context, user *model.User, is
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(exp),
 		},
-		MenuMapping: menuMapping,
+		MenuMapping:   menuMapping,
+		InstitutionID: user.InstitutionID,
 	}
 	expired = exp.Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -172,14 +175,20 @@ func (r *UserClient) CreateAccessToken(ctx context.Context, user *model.User, is
 	return t, expired, nil
 }
 
-func (r *UserClient) GetAllUser(ctx context.Context) ([]*model.User, error) {
+func (r *UserClient) GetAllUser(ctx context.Context, roleLevel int, institutionID string) ([]*model.User, error) {
 	span, ctx := utils.SpanFromContext(ctx, "Client: GetAllUser")
 	defer span.Finish()
 
 	var response []*model.User
 
+	sb := strings.Builder{}
+
+	if roleLevel == 2 {
+		sb.WriteString(fmt.Sprintf(" WHERE u.institution_id = '%s'", institutionID))
+	}
+
 	query := "SELECT u.username, u.fullname, u.shortname, u.email, u.institution_id, u.role_id, u.address, u.phone_number, u.gender, u.religion, u.created_at, i.name AS institution_name, r.role_name FROM users AS u LEFT JOIN institutions AS i ON u.institution_id = i.id LEFT JOIN role AS r ON u.role_id = r.id"
-	result := r.db.Debug().WithContext(ctx).Raw(query).Scan(&response)
+	result := r.db.Debug().WithContext(ctx).Raw(query + sb.String()).Scan(&response)
 
 	if result.Error != nil {
 		utils.LogEventError(span, result.Error)

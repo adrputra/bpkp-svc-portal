@@ -6,7 +6,6 @@ import (
 	"bpkp-svc-portal/app/utils"
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -143,7 +142,6 @@ func (c *ParamController) DeleteParam(ctx context.Context, key string) error {
 
 	err = c.redis.Del(ctx, key).Err()
 	if err != nil {
-		fmt.Println("Hereee")
 		utils.LogEventError(span, err)
 		return err
 	}

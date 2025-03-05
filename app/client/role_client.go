@@ -173,8 +173,8 @@ func (r *RoleClient) CreateNewRole(ctx context.Context, req *model.Role) error {
 
 	var args []interface{}
 
-	args = append(args, req.Id, req.RoleName, req.RoleDesc, req.CreatedAt, req.UpdatedAt, req.CreatedBy, req.UpdatedBy, req.IsActive)
-	query := "INSERT INTO role (id, role_name, role_desc, created_at, updated_at, created_by, updated_by, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+	args = append(args, req.Id, req.RoleName, req.RoleDesc, req.CreatedAt, req.UpdatedAt, req.CreatedBy, req.UpdatedBy, req.IsActive, req.Level)
+	query := "INSERT INTO role (id, role_name, role_desc, created_at, updated_at, created_by, updated_by, is_active, level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 	err := r.db.Exec(query, args...).Error
 	if err != nil {
@@ -195,8 +195,8 @@ func (r *RoleClient) UpdateRole(ctx context.Context, req *model.Role) error {
 
 	var args []interface{}
 
-	args = append(args, req.RoleName, req.UpdatedAt, req.UpdatedBy, req.Id)
-	query := "UPDATE role SET role_name = ?, updated_at = ?, updated_by = ? WHERE id = ?"
+	args = append(args, req.RoleName, req.Level, req.UpdatedAt, req.UpdatedBy, req.Id)
+	query := "UPDATE role SET role_name = ?, level = ?, updated_at = ?, updated_by = ? WHERE id = ?"
 
 	err := r.db.Exec(query, args...).Error
 	if err != nil {

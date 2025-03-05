@@ -38,7 +38,7 @@ func (c *AttendanceClient) GetUserAttendances(ctx context.Context, request *mode
 	}
 
 	if request.RoleLevel == 2 {
-		sb.WriteString(fmt.Sprintf(" AND u.institution_id = %s", request.InstitutionID))
+		sb.WriteString(fmt.Sprintf(" AND u.institution_id = '%s'", request.InstitutionID))
 	}
 
 	if request.Filter.Limit > 0 {

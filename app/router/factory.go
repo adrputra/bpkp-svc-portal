@@ -56,7 +56,7 @@ func InitFactory(cfg *config.Config, db *gorm.DB, s3 *s3.S3, redis *redis.Client
 		institution: client.NewInstitutionClient(db),
 	}
 	controller := ControllerFactory{
-		user:        controller.NewUserController(client.user, client.role),
+		user:        controller.NewUserController(client.user, client.role, client.param),
 		role:        controller.NewRoleController(client.role),
 		param:       controller.NewParamController(redis, client.param),
 		attendance:  controller.NewAttendanceController(client.attendance, client.param),

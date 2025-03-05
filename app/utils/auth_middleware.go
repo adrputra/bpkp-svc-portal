@@ -26,8 +26,9 @@ func IsAuthorized() echo.MiddlewareFunc {
 			}
 
 			md := metadata.New(map[string]string{
-				"username": claims.Name,
-				"role_id":  claims.Role,
+				"username":       claims.Name,
+				"role_id":        claims.Role,
+				"institution_id": claims.InstitutionID,
 			})
 
 			c.SetRequest(c.Request().WithContext(metadata.NewIncomingContext(c.Request().Context(), md)))

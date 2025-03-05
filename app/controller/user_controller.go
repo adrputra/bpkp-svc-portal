@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,14 +23,16 @@ type InterfaceUserController interface {
 }
 
 type UserController struct {
-	userClient client.InterfaceUserClient
-	roleClient client.InterfaceRoleClient
+	userClient  client.InterfaceUserClient
+	roleClient  client.InterfaceRoleClient
+	paramClient client.InterfaceParamClient
 }
 
-func NewUserController(userClient client.InterfaceUserClient, roleClient client.InterfaceRoleClient) *UserController {
+func NewUserController(userClient client.InterfaceUserClient, roleClient client.InterfaceRoleClient, paramClient client.InterfaceParamClient) *UserController {
 	return &UserController{
-		userClient: userClient,
-		roleClient: roleClient,
+		userClient:  userClient,
+		roleClient:  roleClient,
+		paramClient: paramClient,
 	}
 }
 
@@ -59,12 +62,44 @@ func (c *UserController) GetUserDetail(ctx context.Context, username string) (*m
 	span, ctx := utils.SpanFromContext(ctx, "Controller: GetUserDetail")
 	defer span.Finish()
 
-	span.LogKV("Request", username)
+	utils.LogEvent(span, "Username", username)
+
+	session, err := utils.GetMetadata(ctx)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+
+	utils.LogEvent(span, "Session", session)
+
+	roleLevel, err := c.paramClient.GetParameterByKey(ctx, "role-level-3")
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+	if utils.Contains(strings.Split(roleLevel.Value, ";"), session.RoleID) {
+		if username != session.Username {
+			return nil, model.ThrowError(http.StatusUnauthorized, errors.New("you are not allowed to access this data (not authorized role)"))
+		}
+	}
 
 	user, err := c.userClient.GetUserDetail(ctx, username)
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err
+	}
+
+	utils.LogEvent(span, "Response", user)
+
+	roleLevel, err = c.paramClient.GetParameterByKey(ctx, "role-level-2")
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+	if utils.Contains(strings.Split(roleLevel.Value, ";"), session.RoleID) {
+		if user.InstitutionID != session.InstitutionID {
+			return nil, model.ThrowError(http.StatusUnauthorized, errors.New("you are not allowed to access this data (different institution)"))
+		}
 	}
 
 	return user, nil
@@ -160,7 +195,23 @@ func (c *UserController) GetAllUser(ctx context.Context) ([]*model.User, error) 
 	span, ctx := utils.SpanFromContext(ctx, "Controller: GetAllUser")
 	defer span.Finish()
 
-	users, err := c.userClient.GetAllUser(ctx)
+	session, err := utils.GetMetadata(ctx)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+
+	roleLevel, err := c.paramClient.GetParameterByKey(ctx, "role-level-2")
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+	roleLevel2 := 0
+	if utils.Contains(strings.Split(roleLevel.Value, ";"), session.RoleID) {
+		roleLevel2 = 2
+	}
+
+	users, err := c.userClient.GetAllUser(ctx, roleLevel2, session.InstitutionID)
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err

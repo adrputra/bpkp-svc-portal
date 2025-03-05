@@ -9,11 +9,13 @@ type JwtCustomClaims struct {
 	Role        string            `json:"role"`
 	MenuMapping map[string]string `json:"menu_mapping"`
 	jwt.RegisteredClaims
+	InstitutionID string `json:"institution_id"`
 }
 
 type MetadataUser struct {
-	Username string `json:"username"`
-	RoleID   string `json:"role_id"`
+	Username      string `json:"username"`
+	RoleID        string `json:"role_id"`
+	InstitutionID string `json:"institution_id"`
 }
 
 type User struct {
@@ -31,6 +33,7 @@ type User struct {
 	Gender          string `json:"gender" gorm:"column:gender"`
 	Religion        string `json:"religion" gorm:"column:religion"`
 	CreatedAt       string `json:"created_at" gorm:"column:created_at"`
+	RoleLevel       int    `json:"role_level" gorm:"-"`
 }
 
 type RequestLogin struct {

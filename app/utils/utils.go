@@ -47,6 +47,10 @@ func GetMetadata(c context.Context) (*model.MetadataUser, error) {
 		metaData.RoleID = sanitizer(t[0])
 	}
 
+	if t, ok := md["institution_id"]; ok {
+		metaData.InstitutionID = sanitizer(t[0])
+	}
+
 	return metaData, nil
 }
 
