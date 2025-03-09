@@ -24,6 +24,7 @@ type InterfaceRoleClient interface {
 	DeleteMenu(ctx context.Context, menuID string) error
 
 	GetAllRole(ctx context.Context) ([]*model.Role, error)
+	GetRoleByID(ctx context.Context, roleID string) (*model.Role, error)
 	CreateNewRole(ctx context.Context, request *model.Role) error
 	UpdateRole(ctx context.Context, request *model.Role) error
 }
@@ -155,6 +156,27 @@ func (r *RoleClient) GetAllRole(ctx context.Context) ([]*model.Role, error) {
 	query := "SELECT * FROM role ORDER BY id ASC"
 
 	err := r.db.Debug().Raw(query).Scan(&response).Error
+	if err != nil {
+		utils.LogEventError(span, err)
+		return nil, err
+	}
+
+	utils.LogEvent(span, "Response", response)
+
+	return response, nil
+}
+
+func (r *RoleClient) GetRoleByID(ctx context.Context, roleID string) (*model.Role, error) {
+	span, ctx := utils.SpanFromContext(ctx, "Client: GetRoleByID")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", roleID)
+
+	var response *model.Role
+
+	query := "SELECT * FROM role WHERE id = ?"
+
+	err := r.db.Debug().Raw(query, roleID).Scan(&response).Error
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err

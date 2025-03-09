@@ -10,6 +10,7 @@ import (
 func InitPublicRoute(prefix string, e *echo.Group) {
 	route := e.Group(prefix)
 	service := factory.Service.user
+	attendance := factory.Service.attendance
 
 	route.GET("/ping", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, model.Response{
@@ -21,4 +22,7 @@ func InitPublicRoute(prefix string, e *echo.Group) {
 
 	route.POST("/register", service.CreateNewUser)
 	route.POST("/login", service.Login)
+	route.GET("/metabase", service.EmbedMetabase)
+
+	route.POST("/checkinout-rfid", attendance.CheckInOutRFID)
 }

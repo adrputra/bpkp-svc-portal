@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -72,15 +71,13 @@ func (c *UserController) GetUserDetail(ctx context.Context, username string) (*m
 
 	utils.LogEvent(span, "Session", session)
 
-	roleLevel, err := c.paramClient.GetParameterByKey(ctx, "role-level-3")
+	role, err := c.roleClient.GetRoleByID(ctx, session.RoleID)
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err
 	}
-	if utils.Contains(strings.Split(roleLevel.Value, ";"), session.RoleID) {
-		if username != session.Username {
-			return nil, model.ThrowError(http.StatusUnauthorized, errors.New("you are not allowed to access this data (not authorized role)"))
-		}
+	if role.Level == 3 {
+		return nil, model.ThrowError(http.StatusUnauthorized, errors.New("you are not allowed to access this data (not authorized role)"))
 	}
 
 	user, err := c.userClient.GetUserDetail(ctx, username)
@@ -91,15 +88,8 @@ func (c *UserController) GetUserDetail(ctx context.Context, username string) (*m
 
 	utils.LogEvent(span, "Response", user)
 
-	roleLevel, err = c.paramClient.GetParameterByKey(ctx, "role-level-2")
-	if err != nil {
-		utils.LogEventError(span, err)
-		return nil, err
-	}
-	if utils.Contains(strings.Split(roleLevel.Value, ";"), session.RoleID) {
-		if user.InstitutionID != session.InstitutionID {
-			return nil, model.ThrowError(http.StatusUnauthorized, errors.New("you are not allowed to access this data (different institution)"))
-		}
+	if role.Level == 2 && user.InstitutionID != session.InstitutionID {
+		return nil, model.ThrowError(http.StatusUnauthorized, errors.New("you are not allowed to access this data (different institution)"))
 	}
 
 	return user, nil
@@ -201,17 +191,13 @@ func (c *UserController) GetAllUser(ctx context.Context) ([]*model.User, error) 
 		return nil, err
 	}
 
-	roleLevel, err := c.paramClient.GetParameterByKey(ctx, "role-level-2")
+	role, err := c.roleClient.GetRoleByID(ctx, session.RoleID)
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err
 	}
-	roleLevel2 := 0
-	if utils.Contains(strings.Split(roleLevel.Value, ";"), session.RoleID) {
-		roleLevel2 = 2
-	}
 
-	users, err := c.userClient.GetAllUser(ctx, roleLevel2, session.InstitutionID)
+	users, err := c.userClient.GetAllUser(ctx, role.Level, session.InstitutionID)
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err

@@ -14,6 +14,7 @@ type InterfaceAttendanceService interface {
 	GetTodayAttendances(e echo.Context) error
 	CheckIn(e echo.Context) error
 	CheckOut(e echo.Context) error
+	CheckInOutRFID(e echo.Context) error
 }
 
 type AttendanceService struct {
@@ -118,5 +119,31 @@ func (s *AttendanceService) GetTodayAttendances(e echo.Context) error {
 		Code:    200,
 		Message: "Success Get Today Attendances",
 		Data:    res,
+	})
+}
+
+func (s *AttendanceService) CheckInOutRFID(e echo.Context) error {
+	ctx, span := utils.StartSpan(e, "CheckInOutRFID")
+	defer span.Finish()
+
+	var request *model.Attendance
+
+	if err := e.Bind(&request); err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	utils.LogEvent(span, "Request", request)
+
+	res, err := s.uc.CheckInOutRFID(ctx, request)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	return e.JSON(http.StatusOK, model.Response{
+		Code:    200,
+		Message: res,
+		Data:    nil,
 	})
 }

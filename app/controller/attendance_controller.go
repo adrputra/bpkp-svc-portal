@@ -5,8 +5,10 @@ import (
 	"bpkp-svc-portal/app/model"
 	"bpkp-svc-portal/app/utils"
 	"context"
-	"strings"
+	"errors"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type InterfaceAttendanceController interface {
@@ -14,6 +16,7 @@ type InterfaceAttendanceController interface {
 	GetTodayAttendances(ctx context.Context) (*model.UserAttendance, error)
 	CheckIn(ctx context.Context, request *model.Attendance) error
 	CheckOut(ctx context.Context, request *model.Attendance) error
+	CheckInOutRFID(ctx context.Context, request *model.Attendance) (string, error)
 }
 
 type AttendanceController struct {
@@ -34,32 +37,14 @@ func (uc *AttendanceController) GetUserAttendances(ctx context.Context, request 
 
 	utils.LogEvent(span, "Request", request)
 
-	roleLevel, err := uc.paramClient.GetParameterByKey(ctx, "role-level-1")
-	if err != nil {
-		utils.LogEventError(span, err)
-		return nil, err
-	}
-	if utils.Contains(strings.Split(roleLevel.Value, ";"), request.RoleID) {
-		request.RoleLevel = 1
-	} else {
-		roleLevel, err = uc.paramClient.GetParameterByKey(ctx, "role-level-2")
-		if err != nil {
-			utils.LogEventError(span, err)
-			return nil, err
-		}
-		if utils.Contains(strings.Split(roleLevel.Value, ";"), request.RoleID) {
-			request.RoleLevel = 2
-		} else {
-			request.RoleLevel = 3
-		}
-	}
-
 	res, err := uc.attendanceClient.GetUserAttendances(ctx, request)
 
 	if err != nil {
 		utils.LogEventError(span, err)
 		return nil, err
 	}
+
+	utils.LogEvent(span, "Response", res)
 
 	return res, nil
 }
@@ -161,4 +146,27 @@ func (uc *AttendanceController) CheckOut(ctx context.Context, request *model.Att
 	utils.LogEvent(span, "Response", "Success Check Out")
 
 	return nil
+}
+
+func (uc *AttendanceController) CheckInOutRFID(ctx context.Context, request *model.Attendance) (string, error) {
+	span, ctx := utils.SpanFromContext(ctx, "Controller: CheckInOutRFID")
+	defer span.Finish()
+
+	utils.LogEvent(span, "Request", request)
+
+	err := uc.attendanceClient.CheckIn(ctx, request)
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			err = uc.attendanceClient.CheckOut(ctx, request)
+			if err != nil {
+				utils.LogEventError(span, err)
+				return "", err
+			}
+			return "Success Check Out", err
+		}
+		utils.LogEventError(span, err)
+		return "", err
+	}
+
+	return "Success Check In", err
 }
