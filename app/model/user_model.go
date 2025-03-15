@@ -34,6 +34,8 @@ type User struct {
 	Religion        string `json:"religion" gorm:"column:religion"`
 	CreatedAt       string `json:"created_at" gorm:"column:created_at"`
 	RoleLevel       int    `json:"role_level" gorm:"-"`
+	ProfilePhoto    string `json:"profile_photo" gorm:"column:profile_photo"`
+	CoverPhoto      string `json:"cover_photo" gorm:"column:cover_photo"`
 }
 
 type RequestLogin struct {
@@ -51,4 +53,8 @@ type ResponseLogin struct {
 	InstitutionID   string             `json:"institution_id" gorm:"type:varchar(200);"`
 	InstitutionName string             `json:"institution_name" gorm:"type:varchar(200);"`
 	MenuMapping     []*MenuRoleMapping `json:"menu_mapping" gorm:"-"`
+}
+
+type UploadPhoto struct {
+	Photo File `json:"photo"`
 }

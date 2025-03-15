@@ -4,8 +4,11 @@ import (
 	"bpkp-svc-portal/app/controller"
 	"bpkp-svc-portal/app/model"
 	"bpkp-svc-portal/app/utils"
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -21,6 +24,8 @@ type InterfaceUserService interface {
 	GetAllUser(e echo.Context) error
 	GetInstitutionList(e echo.Context) error
 	EmbedMetabase(e echo.Context) error
+	UploadProfilePhoto(e echo.Context) error
+	UploadCoverPhoto(e echo.Context) error
 }
 
 type UserService struct {
@@ -222,5 +227,91 @@ func (s *UserService) EmbedMetabase(e echo.Context) error {
 		Code:    200,
 		Message: "Success Embed Metabase",
 		Data:    iframeURL,
+	})
+}
+
+func (s *UserService) UploadCoverPhoto(e echo.Context) error {
+	ctx, span := utils.StartSpan(e, "UploadCoverPhoto")
+	defer span.Finish()
+
+	form, err := e.MultipartForm()
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	file := form.File["file"][0]
+
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	var buffer bytes.Buffer
+	_, err = io.Copy(&buffer, src)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+	imageBytes := buffer.Bytes()
+	attach := &model.File{
+		FileName:    file.Filename,
+		BytesObject: imageBytes,
+		Extension:   strings.Split(file.Filename, ".")[1],
+	}
+
+	err = s.uc.UploadCoverPhoto(ctx, attach)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	return e.JSON(http.StatusOK, model.Response{
+		Code:    200,
+		Message: "Success Upload Profile Photo",
+		Data:    nil,
+	})
+}
+
+func (s *UserService) UploadProfilePhoto(e echo.Context) error {
+	ctx, span := utils.StartSpan(e, "UploadProfilePhoto")
+	defer span.Finish()
+
+	form, err := e.MultipartForm()
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	file := form.File["file"][0]
+
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	var buffer bytes.Buffer
+	_, err = io.Copy(&buffer, src)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+	imageBytes := buffer.Bytes()
+	attach := &model.File{
+		FileName:    file.Filename,
+		BytesObject: imageBytes,
+		Extension:   strings.Split(file.Filename, ".")[1],
+	}
+
+	err = s.uc.UploadProfilePhoto(ctx, attach)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return utils.LogError(e, err, nil)
+	}
+
+	return e.JSON(http.StatusOK, model.Response{
+		Code:    200,
+		Message: "Success Upload Profile Photo",
+		Data:    nil,
 	})
 }

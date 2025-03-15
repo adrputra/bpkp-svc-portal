@@ -25,6 +25,8 @@ type InterfaceUserClient interface {
 	CreateAccessToken(ctx context.Context, user *model.User, isLogout bool, menuMapping map[string]string) (t string, expired int64, err error)
 	GetAllUser(ctx context.Context, roleLevel int, institutionID string) ([]*model.User, error)
 	GetInstitutionList(ctx context.Context) ([]string, error)
+	UpdateProfilePhoto(ctx context.Context, url string, username string) error
+	UpdateCoverPhoto(ctx context.Context, url string, username string) error
 }
 
 type UserClient struct {
@@ -217,4 +219,44 @@ func (r *UserClient) GetInstitutionList(ctx context.Context) ([]string, error) {
 	utils.LogEvent(span, "Response", response)
 
 	return response, nil
+}
+
+func (r *UserClient) UpdateProfilePhoto(ctx context.Context, url string, username string) error {
+	span, ctx := utils.SpanFromContext(ctx, "Client: UpdateProfilePhoto")
+	defer span.Finish()
+
+	var args []interface{}
+	args = append(args, url, username)
+
+	var result *gorm.DB
+	query := "UPDATE users SET profile_photo = ? WHERE username = ?"
+
+	result = r.db.Debug().WithContext(ctx).Exec(query, args...)
+
+	if result.Error != nil {
+		utils.LogEventError(span, result.Error)
+		return result.Error
+	}
+
+	return nil
+}
+
+func (r *UserClient) UpdateCoverPhoto(ctx context.Context, url string, username string) error {
+	span, ctx := utils.SpanFromContext(ctx, "Client: UpdateCoverPhoto")
+	defer span.Finish()
+
+	var args []interface{}
+	args = append(args, url, username)
+
+	var result *gorm.DB
+	query := "UPDATE users SET cover_photo = ? WHERE username = ?"
+
+	result = r.db.Debug().WithContext(ctx).Exec(query, args...)
+
+	if result.Error != nil {
+		utils.LogEventError(span, result.Error)
+		return result.Error
+	}
+
+	return nil
 }

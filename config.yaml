@@ -28,13 +28,13 @@ jaeger:
   tracePerSecond: 100
   serviceName: "bpkp-svc-portal"
 minioProfile:
-  host: "217.15.163.138"
+  host: "http://217.15.163.138"
   port: "9000"
-  username: "admin"
+  username: "user"
   secretKey: "adrputra"
   tls: false
   region: "id-jkt-1"
-  bucket: "face-dataset"
+  bucket: "bpkp"
 api:
   processingsvc:
     host: "http://localhost"

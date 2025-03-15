@@ -18,8 +18,8 @@ import (
 )
 
 type InterfaceStorageClient interface {
-	UploadFile(ctx context.Context, req []*model.File, bucket string, path string) error
-	StoreFileData(ctx context.Context, tx *gorm.DB, req *model.Dataset) error
+	UploadFile(ctx context.Context, req *model.File, bucket string, path string) (string, error)
+	StoreFileData(ctx context.Context, url string, username string) error
 
 	DeleteDatasetDB(ctx context.Context, tx *gorm.DB, username string) error
 	DeleteObject(ctx context.Context, bucket string, prefix string) error
@@ -39,24 +39,23 @@ func NewStorageClient(s3 *s3.S3, db *gorm.DB) *StorageClient {
 	}
 }
 
-func (c *StorageClient) UploadFile(ctx context.Context, req []*model.File, bucket string, path string) error {
+func (c *StorageClient) UploadFile(ctx context.Context, req *model.File, bucket string, path string) (string, error) {
 	span, ctx := utils.SpanFromContext(ctx, "Client: UploadFile")
 	defer span.Finish()
 
-	for _, file := range req {
-		_, err := c.s3.PutObjectWithContext(ctx, &s3.PutObjectInput{
-			Bucket: aws.String(bucket),
-			Key:    aws.String(fmt.Sprintf("%s/%s", path, file.FileName)),
-			Body:   bytes.NewReader(file.BytesObject),
-		})
+	_, err := c.s3.PutObjectWithContext(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(fmt.Sprintf("%s.%s", path, req.Extension)),
+		Body:   bytes.NewReader(req.BytesObject),
+	})
 
-		if err != nil {
-			utils.LogEventError(span, err)
-			return err
-		}
+	if err != nil {
+		utils.LogEventError(span, err)
+		return "", err
 	}
 
-	return nil
+	urlStr := fmt.Sprintf("https://minioc.eventarry.com/api/v1/buckets/bpkp/objects/download?preview=true&prefix=%s.%s", path, req.Extension)
+	return urlStr, nil
 }
 
 func (c *StorageClient) DeleteObject(ctx context.Context, bucket string, prefix string) error {
@@ -120,20 +119,17 @@ func (c *StorageClient) DeleteObject(ctx context.Context, bucket string, prefix 
 	return nil
 }
 
-func (c *StorageClient) StoreFileData(ctx context.Context, tx *gorm.DB, req *model.Dataset) error {
+func (c *StorageClient) StoreFileData(ctx context.Context, url string, username string) error {
 	span, ctx := utils.SpanFromContext(ctx, "Client: StoreFileData")
 	defer span.Finish()
 
 	var args []interface{}
-	args = append(args, req.Username, req.Bucket, utils.LocalTime())
+	args = append(args, url, username)
 
 	var result *gorm.DB
-	query := "INSERT INTO face_datasets (username, dataset, created_at) VALUES (?, ?, ?)"
-	if tx != nil {
-		result = tx.Debug().WithContext(ctx).Exec(query, args...)
-	} else {
-		result = c.db.Debug().WithContext(ctx).Exec(query, args...)
-	}
+	query := "UPDATE users SET profile_photo = ? WHERE username = ?"
+
+	result = c.db.Debug().WithContext(ctx).Exec(query, args...)
 
 	if result.Error != nil {
 		utils.LogEventError(span, result.Error)

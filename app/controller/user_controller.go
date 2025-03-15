@@ -6,6 +6,7 @@ import (
 	"bpkp-svc-portal/app/utils"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,19 +20,24 @@ type InterfaceUserController interface {
 	Login(ctx context.Context, request *model.RequestLogin) (*model.ResponseLogin, error)
 	GetAllUser(ctx context.Context) ([]*model.User, error)
 	GetInstitutionList(ctx context.Context) ([]string, error)
+
+	UploadProfilePhoto(ctx context.Context, file *model.File) error
+	UploadCoverPhoto(ctx context.Context, file *model.File) error
 }
 
 type UserController struct {
-	userClient  client.InterfaceUserClient
-	roleClient  client.InterfaceRoleClient
-	paramClient client.InterfaceParamClient
+	userClient    client.InterfaceUserClient
+	roleClient    client.InterfaceRoleClient
+	paramClient   client.InterfaceParamClient
+	storageClient client.InterfaceStorageClient
 }
 
-func NewUserController(userClient client.InterfaceUserClient, roleClient client.InterfaceRoleClient, paramClient client.InterfaceParamClient) *UserController {
+func NewUserController(userClient client.InterfaceUserClient, roleClient client.InterfaceRoleClient, paramClient client.InterfaceParamClient, storageClient client.InterfaceStorageClient) *UserController {
 	return &UserController{
-		userClient:  userClient,
-		roleClient:  roleClient,
-		paramClient: paramClient,
+		userClient:    userClient,
+		roleClient:    roleClient,
+		paramClient:   paramClient,
+		storageClient: storageClient,
 	}
 }
 
@@ -221,4 +227,54 @@ func (c *UserController) GetInstitutionList(ctx context.Context) ([]string, erro
 	utils.LogEvent(span, "Response", institutionList)
 
 	return institutionList, nil
+}
+
+func (c *UserController) UploadProfilePhoto(ctx context.Context, file *model.File) error {
+	span, ctx := utils.SpanFromContext(ctx, "Controller: UploadProfilePhoto")
+	defer span.Finish()
+
+	session, err := utils.GetMetadata(ctx)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	res, err := c.storageClient.UploadFile(ctx, file, "bpkp", fmt.Sprintf("%s/%s", "profile-photo", session.Username))
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	err = c.userClient.UpdateProfilePhoto(ctx, res, session.Username)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *UserController) UploadCoverPhoto(ctx context.Context, file *model.File) error {
+	span, ctx := utils.SpanFromContext(ctx, "Controller: UploadCoverPhoto")
+	defer span.Finish()
+
+	session, err := utils.GetMetadata(ctx)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	res, err := c.storageClient.UploadFile(ctx, file, "bpkp", fmt.Sprintf("%s/%s", "cover-photo", session.Username))
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	err = c.userClient.UpdateCoverPhoto(ctx, res, session.Username)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err
+	}
+
+	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"bpkp-svc-portal/app/utils"
 	"context"
 	"errors"
+	"net/http"
 	"time"
 
 	"gorm.io/gorm"
@@ -152,13 +153,65 @@ func (uc *AttendanceController) CheckInOutRFID(ctx context.Context, request *mod
 	span, ctx := utils.SpanFromContext(ctx, "Controller: CheckInOutRFID")
 	defer span.Finish()
 
+	request.CheckIn = utils.LocalTime()
+
+	checkInThreshold, err := uc.paramClient.GetParameterByKey(ctx, "checkin-time")
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err.Error(), err
+	}
+
+	parsedTime, err := time.Parse("15:04", checkInThreshold.Value)
+	if err != nil {
+		utils.LogEventError(span, err)
+		return err.Error(), err
+	}
+
+	targetTime := time.Date(utils.LocalTime().Year(), utils.LocalTime().Month(), utils.LocalTime().Day(), parsedTime.Hour(), parsedTime.Minute(), 0, 0, time.Local)
+	if utils.LocalTime().Compare(targetTime) == -1 {
+		request.StatusIn = "On Time"
+	} else {
+		request.StatusIn = "Late"
+	}
+
 	utils.LogEvent(span, "Request", request)
 
-	err := uc.attendanceClient.CheckIn(ctx, request)
+	err = uc.attendanceClient.CheckIn(ctx, request)
 	if err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
+		if errors.Is(err, gorm.ErrRegistered) {
+
+			request.CheckOut = utils.LocalTime()
+
+			checkOutThreshold, err := uc.paramClient.GetParameterByKey(ctx, "checkout-time")
+			if err != nil {
+				utils.LogEventError(span, err)
+				return err.Error(), err
+
+			}
+
+			parsedTime, err := time.Parse("15:04", checkOutThreshold.Value)
+			if err != nil {
+				utils.LogEventError(span, err)
+				return err.Error(), err
+
+			}
+
+			targetTime := time.Date(utils.LocalTime().Year(), utils.LocalTime().Month(), utils.LocalTime().Day(), parsedTime.Hour(), parsedTime.Minute(), 0, 0, time.Local)
+			if utils.LocalTime().Compare(targetTime) == -1 {
+				request.StatusOut = "Early"
+			} else {
+				request.StatusOut = "Normal"
+			}
+
+			utils.LogEvent(span, "Request", request)
+
 			err = uc.attendanceClient.CheckOut(ctx, request)
 			if err != nil {
+
+				if errors.Is(err, gorm.ErrRegistered) {
+					return "You already checked out", model.ThrowError(http.StatusBadRequest, err)
+				}
+
 				utils.LogEventError(span, err)
 				return "", err
 			}

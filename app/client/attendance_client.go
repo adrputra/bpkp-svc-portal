@@ -95,11 +95,15 @@ func (c *AttendanceClient) CheckIn(ctx context.Context, request *model.Attendanc
 	args = append(args, request.Username, request.CheckIn, request.StatusIn, request.RemarkIn, request.SourceIn, request.Username)
 	query := "INSERT INTO attendance (username, check_in, status_in, remark_in, source_in) SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM attendance WHERE username = ? AND DATE(check_in) = CURDATE())"
 
-	err := c.db.Debug().Exec(query, args...).Error
+	err := c.db.Debug().Exec(query, args...)
 
-	if err != nil {
-		utils.LogEventError(span, err)
-		return err
+	if err.Error != nil {
+		utils.LogEventError(span, err.Error)
+		return err.Error
+	}
+	if err.RowsAffected == 0 {
+		utils.LogEvent(span, "Response", "User already checked in")
+		return gorm.ErrRegistered
 	}
 
 	return nil
@@ -114,13 +118,18 @@ func (c *AttendanceClient) CheckOut(ctx context.Context, request *model.Attendan
 	var args []interface{}
 
 	args = append(args, request.CheckOut, request.StatusOut, request.RemarkOut, request.SourceOut, request.Username)
-	query := "UPDATE attendance SET check_out = ?, status_out = ?, remark_out = ?, source_out = ? WHERE username = ? AND DATE(check_in) = CURDATE()"
+	query := "UPDATE attendance SET check_out = ?, status_out = ?, remark_out = ?, source_out = ? WHERE username = ? AND DATE(check_in) = CURDATE() AND check_out IS NULL"
 
-	err := c.db.Debug().Exec(query, args...).Error
+	err := c.db.Debug().Exec(query, args...)
 
-	if err != nil {
-		utils.LogEventError(span, err)
-		return err
+	if err.Error != nil {
+		utils.LogEventError(span, err.Error)
+		return err.Error
+	}
+
+	if err.RowsAffected == 0 {
+		utils.LogEvent(span, "Response", "User not found")
+		return gorm.ErrRegistered
 	}
 
 	return nil

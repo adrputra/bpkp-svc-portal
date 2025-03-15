@@ -76,6 +76,7 @@ func NewStorageConnection(cfg *config.MinioS3) *s3.S3 {
 		S3ForcePathStyle: aws.Bool(true),
 		Region:           aws.String(cfg.Region),
 		HTTPClient:       httpClient,
+		DisableSSL:       aws.Bool(cfg.Tls),
 	})
 
 	if err != nil {
